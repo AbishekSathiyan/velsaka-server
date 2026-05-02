@@ -1,5 +1,5 @@
 import express from "express";
-import Contact from "../models/Contact.model.js";
+import contact from "../models/contact.model.js";
 import nodemailer from "nodemailer";
 import { ENV } from "../config/env.js";
 
@@ -79,7 +79,9 @@ const sendAdminEmailNotification = async (contactData) => {
         
         <div style="display:flex; padding:8px 0; border-bottom:1px solid #e5e7eb;">
           <div style="font-weight:600; color:#374151; width:110px; font-size:14px;">Date & Time:</div>
-          <div style="color:#6b7280; flex:1; font-size:14px;">${new Date(createdAt).toLocaleString("en-US", {
+          <div style="color:#6b7280; flex:1; font-size:14px;">${new Date(
+            createdAt,
+          ).toLocaleString("en-US", {
             weekday: "long",
             year: "numeric",
             month: "long",
@@ -291,7 +293,7 @@ const sendAutoReplyEmail = async (contactData) => {
           YOUR MESSAGE SUMMARY
         </div>
         <div style="color:#6b7280; font-style:italic; line-height:1.6; font-size:14px;">
-          "${message.substring(0, 150)}${message.length > 150 ? '...' : ''}"
+          "${message.substring(0, 150)}${message.length > 150 ? "..." : ""}"
         </div>
       </div>
 
@@ -395,7 +397,8 @@ router.post("/", async (req, res) => {
 
     // Phone validation (optional)
     if (phone) {
-      const phoneRegex = /^[\+]?[(]?[0-9]{3}[)]?[-\s\.]?[0-9]{3}[-\s\.]?[0-9]{4,6}$/;
+      const phoneRegex =
+        /^[\+]?[(]?[0-9]{3}[)]?[-\s\.]?[0-9]{3}[-\s\.]?[0-9]{4,6}$/;
       if (!phoneRegex.test(phone)) {
         return res.status(400).json({
           success: false,

@@ -46,8 +46,16 @@ const contactSchema = new mongoose.Schema({
   },
   updatedAt: {
     type: Date,
+    default: Date.now,
   },
 });
 
+// auto update timestamp
+contactSchema.pre("save", function (next) {
+  this.updatedAt = Date.now();
+  next();
+});
+
 const Contact = mongoose.model("Contact", contactSchema);
+
 export default Contact;
