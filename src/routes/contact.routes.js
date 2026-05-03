@@ -1,5 +1,5 @@
 import express from "express";
-import contact from "../models/contact.model.js";
+import Contact from "../models/contact.model.js";
 import nodemailer from "nodemailer";
 import { ENV } from "../config/env.js";
 
@@ -156,6 +156,7 @@ const sendAdminEmailNotification = async (contactData) => {
       <div style="margin:12px 0;">
         <a href="https://github.com/AbishekSathiyan" style="color:#667eea; text-decoration:none; margin:0 12px; font-size:12px;">GITHUB</a> •
         <a href="https://www.linkedin.com/in/abishek04/" style="color:#667eea; text-decoration:none; margin:0 12px; font-size:12px;">LINKEDIN</a> •
+        <a href="${ENV.CLIENT_URL || "http://localhost:5173"}" style="color:#667eea; text-decoration:none; margin:0 12px; font-size:12px;">VELSAKA TECH</a> •
         <a href="https://wa.me/917092085864" style="color:#667eea; text-decoration:none; margin:0 12px; font-size:12px;">WHATSAPP</a>
       </div>
       <div style="font-size:11px; color:#9ca3af;">
@@ -287,6 +288,23 @@ const sendAutoReplyEmail = async (contactData) => {
         </div>
       </div>
 
+      <!-- FOUNDER SECTION -->
+      <div style="background:linear-gradient(135deg, #667eea10 0%, #764ba210 100%); border-radius:12px; padding:20px; margin-bottom:24px; border:1px solid #667eea20; text-align:center;">
+        <div style="font-size:12px; font-weight:700; color:#667eea; text-transform:uppercase; letter-spacing:1px; margin-bottom:12px;">
+          MEET THE FOUNDER
+        </div>
+        <div style="font-size:14px; color:#1a1a2e; margin-bottom:8px;">
+          <strong>Abishek Sathiyan</strong> - Founder & Chief Architect
+        </div>
+        <div style="font-size:13px; color:#6b7280; margin-bottom:12px;">
+          Building innovative tech solutions with passion and precision
+        </div>
+        <a href="https://abisheksathiyan-portfolio-front-end.vercel.app/" 
+           style="display:inline-block; background:linear-gradient(135deg,#667eea 0%,#764ba2 100%); color:#ffffff; padding:8px 20px; border-radius:20px; text-decoration:none; font-weight:600; font-size:12px; transition:transform 0.2s;">
+          VIEW FOUNDER'S PORTFOLIO →
+        </a>
+      </div>
+
       <!-- MESSAGE SUMMARY -->
       <div style="background:#ffffff; border:1px solid #e5e7eb; border-radius:10px; padding:16px; margin-bottom:24px;">
         <div style="font-size:11px; font-weight:700; color:#667eea; text-transform:uppercase; letter-spacing:1px; margin-bottom:8px;">
@@ -316,6 +334,10 @@ const sendAutoReplyEmail = async (contactData) => {
         Please keep this ID for reference
       </div>
 
+      <div style="margin-top:20px; text-align:center; font-size:12px; color:#6b7280;">
+        <a href="${ENV.CLIENT_URL || "http://localhost:5173"}" style="color:#667eea; text-decoration:none;">Visit VELSAKA TECH</a> for more information about our services.
+      </div>
+
     </div>
 
     <!-- FOOTER -->
@@ -323,6 +345,8 @@ const sendAutoReplyEmail = async (contactData) => {
       <div style="margin:12px 0;">
         <a href="https://github.com/AbishekSathiyan" style="color:#667eea; text-decoration:none; margin:0 12px; font-size:12px;">GITHUB</a> •
         <a href="https://www.linkedin.com/in/abishek04/" style="color:#667eea; text-decoration:none; margin:0 12px; font-size:12px;">LINKEDIN</a> •
+        <a href="https://abisheksathiyan-portfolio-front-end.vercel.app/" style="color:#667eea; text-decoration:none; margin:0 12px; font-size:12px;">FOUNDER'S PORTFOLIO</a> •
+        <a href="${ENV.CLIENT_URL || "http://localhost:5173"}" style="color:#667eea; text-decoration:none; margin:0 12px; font-size:12px;">VELSAKA TECH</a> •
         <a href="https://wa.me/917092085864" style="color:#667eea; text-decoration:none; margin:0 12px; font-size:12px;">WHATSAPP</a>
       </div>
       <div style="font-size:11px; color:#9ca3af;">
@@ -355,10 +379,16 @@ const sendAutoReplyEmail = async (contactData) => {
       3. Custom Proposal - Within 3-5 days
       4. Project Kickoff - Start building
       
+      MEET THE FOUNDER:
+      Abishek Sathiyan - Founder & Chief Architect
+      View his portfolio: https://abisheksathiyan-portfolio-front-end.vercel.app/
+      
       For immediate assistance:
       WhatsApp: +91 70920 85864
       Call: +91 70920 85864
       Email: abishek.sathiyan.2002@gmail.com
+      
+      Visit our website: ${ENV.CLIENT_URL || "http://localhost:5173"}
       
       Your Inquiry ID: ${_id}
       

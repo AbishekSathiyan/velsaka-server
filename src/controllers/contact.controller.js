@@ -5,6 +5,7 @@ export const createContact = async (req, res) => {
   try {
     const { fullName, email, phone, service, message } = req.body;
 
+    // validation
     if (!fullName || !email || !message) {
       return res.status(400).json({
         success: false,
@@ -12,16 +13,17 @@ export const createContact = async (req, res) => {
       });
     }
 
+    // save DB
     const contact = await Contact.create({
       fullName,
       email,
-      phone,
-      service,
+      phone: phone || "",
+      service: service || "Web Development",
       message,
     });
 
-    // 📩 Admin notification email
-    await sendMail({
+    // email (don’t crash API if mail fails)
+    sendMail({
       to: process.env.ADMIN_EMAIL,
       subject: "New Contact Form Submission",
       html: `
@@ -29,48 +31,25 @@ export const createContact = async (req, res) => {
         <p><b>Name:</b> ${fullName}</p>
         <p><b>Email:</b> ${email}</p>
         <p><b>Phone:</b> ${phone || "N/A"}</p>
-        <p><b>Service:</b> ${service}</p>
+        <p><b>Service:</b> ${service || "Web Development"}</p>
         <p><b>Message:</b> ${message}</p>
       `,
+    }).catch((err) => {
+      console.error("MAIL ERROR:", err.message);
     });
 
-    res.status(201).json({
+    return res.status(201).json({
       success: true,
       message: "Message sent successfully",
       data: contact,
     });
+
   } catch (err) {
-    res.status(500).json({
+    console.error("CONTACT ERROR:", err);
+
+    return res.status(500).json({
       success: false,
-      message: "Server error",
+      message: err.message || "Server error",
     });
-  }
-};
-
-// Admin - Get all contacts
-export const getContacts = async (req, res) => {
-  try {
-    const contacts = await Contact.find().sort({ createdAt: -1 });
-
-    res.json({
-      success: true,
-      data: contacts,
-    });
-  } catch {
-    res.status(500).json({ success: false });
-  }
-};
-
-// Admin - Delete contact
-export const deleteContact = async (req, res) => {
-  try {
-    await Contact.findByIdAndDelete(req.params.id);
-
-    res.json({
-      success: true,
-      message: "Deleted",
-    });
-  } catch {
-    res.status(500).json({ success: false });
   }
 };

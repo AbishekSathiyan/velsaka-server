@@ -1,4 +1,1 @@
-export const otpStore = {
-  otp: null,
-  expiresAt: null,
-};
+export const otpStore = new Map();
