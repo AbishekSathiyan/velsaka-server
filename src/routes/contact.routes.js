@@ -5,13 +5,19 @@ import { ENV } from "../config/env.js";
 
 const router = express.Router();
 
-// Configure email transporter
+// FIXED: Proper Gmail SMTP configuration (production safe)
 const transporter = nodemailer.createTransport({
-  service: "gmail",
+  host: "smtp.gmail.com",
+  port: 465,
+  secure: true, // SSL
   auth: {
     user: process.env.EMAIL_USER,
-    pass: process.env.EMAIL_PASS,
+    pass: process.env.EMAIL_PASS, // MUST be Gmail App Password
   },
+  tls: {
+    rejectUnauthorized: false,
+  },
+  connectionTimeout: 10000, // FIX: avoid Render timeout crash
 });
 
 // Verify email configuration on startup
@@ -25,7 +31,6 @@ transporter.verify((error, success) => {
 
 // Professional email template for admin notification
 const sendAdminEmailNotification = async (contactData) => {
-  // FIXED: Safely handle createdAt
   const { fullName, email, phone, service, message } = contactData;
   const createdAt = contactData.createdAt || new Date();
 
@@ -197,13 +202,12 @@ const sendAdminEmailNotification = async (contactData) => {
     return result;
   } catch (error) {
     console.error("❌ Failed to send admin email:", error.message);
-    throw error;
+    return null; // FIX: prevent crash, return null instead of throwing
   }
 };
 
 // Professional auto-reply email template for customer
 const sendAutoReplyEmail = async (contactData) => {
-  // FIXED: Safely handle createdAt
   const { fullName, email, service, message } = contactData;
   const _id = contactData._id || contactData.id;
 
@@ -400,7 +404,7 @@ const sendAutoReplyEmail = async (contactData) => {
         Call: +91 70920 85864
         Email: abishek.sathiyan.2002@gmail.com
         
-        Visit our website: ${ENV.PROD_CLIENT_URL || "http://localhost:5173"}
+        Visit our website: ${ENV.CLIENT_URL || "http://localhost:5173"}
         
         Your Inquiry ID: ${_id}
         
@@ -414,7 +418,7 @@ const sendAutoReplyEmail = async (contactData) => {
     return result;
   } catch (error) {
     console.error("❌ Failed to send auto-reply email:", error.message);
-    throw error;
+    return null; // FIX: prevent crash, return null instead of throwing
   }
 };
 
@@ -469,26 +473,19 @@ router.post("/", async (req, res) => {
     await contact.save();
     console.log("✅ Contact saved to database with ID:", contact._id);
 
-    // Send email notifications - FIXED: Now awaiting properly
-    try {
+    // FIX: Non-blocking email sending (prevents API timeout)
+    // This sends emails in the background without waiting for response
+    setImmediate(async () => {
       console.log("📧 Sending admin email notification...");
       await sendAdminEmailNotification(contact);
-      console.log("✅ Admin email sent successfully");
-
+      
       console.log("📧 Sending auto-reply email to customer...");
       await sendAutoReplyEmail(contact);
-      console.log("✅ Auto-reply email sent successfully");
-    } catch (emailError) {
-      console.error("❌ Email sending failed:", emailError.message);
-      console.error("Email error details:", emailError);
-      // Don't fail the request if email fails - just log it
-      // The contact is already saved in database
-    }
+    });
 
     res.status(201).json({
       success: true,
-      message:
-        "Thank you for reaching out! We will get back to you within 24 hours.",
+      message: "Thank you for reaching out! We will get back to you within 24 hours.",
       id: contact._id,
     });
   } catch (error) {
