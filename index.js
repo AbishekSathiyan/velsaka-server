@@ -7,12 +7,14 @@ import path from "path";
 import { fileURLToPath } from "url";
 
 import connectDB from "./src/config/db.js";
+import dns from "dns";
 
 // ✅ Routes
 import adminAuthRoutes from "./src/routes/adminAuth.routes.js";
 import waitlistRoutes from "./src/routes/waitlist.routes.js";
 
 // ✅ Fix IPv6 issue (Render)
+
 dns.setDefaultResultOrder("ipv4first");
 
 // ✅ Load env FIRST
