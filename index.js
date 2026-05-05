@@ -7,39 +7,44 @@ import path from "path";
 import { fileURLToPath } from "url";
 
 import connectDB from "./src/config/db.js";
-import dns from "dns";
 
-// ✅ Routes
+// Routes
 import adminAuthRoutes from "./src/routes/adminAuth.routes.js";
 import waitlistRoutes from "./src/routes/waitlist.routes.js";
 
-// ✅ Fix IPv6 issue (Render)
-
-dns.setDefaultResultOrder("ipv4first");
-
-// ✅ Load env FIRST
+// ========================
+// 1. ENV FIRST
+// ========================
 dotenv.config();
 
+// ========================
+// 2. FIX IPv6 ISSUE (IMPORTANT)
+// ========================
+dns.setDefaultResultOrder("ipv4first");
+
+// ========================
+// 3. PATH SETUP
+// ========================
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
+// ========================
+// 4. APP INIT
+// ========================
 const app = express();
 
-//
-// 🔥 1. BUILD ALLOWED ORIGINS FROM ENV (BEFORE CORS)
-//
+// ========================
+// 5. ALLOWED ORIGINS
+// ========================
 const allowedOrigins = process.env.ALLOWED_ORIGINS
   ? process.env.ALLOWED_ORIGINS.split(",").map((o) => o.trim())
-  : [
-      process.env.CLIENT_URL,
-      process.env.PROD_CLIENT_URL,
-    ].filter(Boolean);
+  : [process.env.CLIENT_URL, process.env.PROD_CLIENT_URL].filter(Boolean);
 
 console.log("🌐 Allowed Origins:", allowedOrigins);
 
-//
-// 🔥 2. CONNECT DB (FAIL FAST)
-//
+// ========================
+// 6. DB CONNECTION
+// ========================
 try {
   await connectDB();
   console.log("✅ MongoDB connected");
@@ -48,20 +53,19 @@ try {
   process.exit(1);
 }
 
-//
-// 🔥 3. SECURITY MIDDLEWARE
-//
+// ========================
+// 7. SECURITY
+// ========================
 app.use(helmet());
 
-//
-// 🔥 4. CORS (SINGLE SOURCE OF TRUTH)
-//
+// ========================
+// 8. CORS
+// ========================
 app.use(
   cors({
     origin: (origin, callback) => {
       if (!origin) return callback(null, true);
 
-      // ✅ Allow all Vercel preview deployments
       if (origin.includes("vercel.app")) {
         return callback(null, true);
       }
@@ -77,14 +81,14 @@ app.use(
   })
 );
 
-//
-// 🔥 5. BODY PARSER
-//
+// ========================
+// 9. BODY PARSER
+// ========================
 app.use(express.json());
 
-//
-// 🔥 6. REQUEST LOGGER (DEV ONLY)
-//
+// ========================
+// 10. LOGGER
+// ========================
 if (process.env.NODE_ENV !== "production") {
   app.use((req, res, next) => {
     console.log(`📝 ${req.method} ${req.url}`);
@@ -92,21 +96,21 @@ if (process.env.NODE_ENV !== "production") {
   });
 }
 
-//
-// 🔥 7. ENV DEBUG
-//
+// ========================
+// 11. ENV CHECK
+// ========================
 console.log("\n📋 Environment check:");
 console.log("JWT_SECRET:", process.env.JWT_SECRET ? "✅" : "❌");
 console.log("EMAIL_USER:", process.env.EMAIL_USER ? "✅" : "❌");
 console.log("MONGO_URI:", process.env.MONGO_URI ? "✅" : "❌");
 
-//
-// 🔥 8. ROUTES
-//
+// ========================
+// 12. ROUTES
+// ========================
 app.use("/api/admin/auth", adminAuthRoutes);
 app.use("/api/waitlist", waitlistRoutes);
 
-// ✅ Dynamic import (safe)
+// Contact routes (safe dynamic import)
 try {
   const contactRoutes = await import("./src/routes/contact.routes.js");
   app.use("/api/contact", contactRoutes.default);
@@ -115,9 +119,9 @@ try {
   console.log("⚠️ Contact routes not found");
 }
 
-//
-// 🔥 9. HEALTH CHECK
-//
+// ========================
+// 13. HEALTH CHECK
+// ========================
 app.get("/health", (req, res) => {
   res.json({
     status: "ok",
@@ -126,9 +130,9 @@ app.get("/health", (req, res) => {
   });
 });
 
-//
-// 🔥 10. ROOT
-//
+// ========================
+// 14. ROOT
+// ========================
 app.get("/", (req, res) => {
   res.json({
     message: "VELSAKA TECH API Server",
@@ -136,9 +140,9 @@ app.get("/", (req, res) => {
   });
 });
 
-//
-// 🔥 11. GLOBAL ERROR HANDLER
-//
+// ========================
+// 15. ERROR HANDLER
+// ========================
 app.use((err, req, res, next) => {
   console.error("❌ Error:", err.message);
 
@@ -148,18 +152,18 @@ app.use((err, req, res, next) => {
   });
 });
 
-//
-// 🔥 12. START SERVER (LAST)
-//
+// ========================
+// 16. START SERVER
+// ========================
 const PORT = process.env.PORT || 5000;
 
 app.listen(PORT, () => {
   console.log(`🚀 Server running on http://localhost:${PORT}`);
 });
 
-//
-// 🔥 13. GRACEFUL SHUTDOWN
-//
+// ========================
+// 17. GRACEFUL SHUTDOWN
+// ========================
 process.on("SIGINT", () => {
   console.log("\n🛑 Shutting down server...");
   process.exit(0);
