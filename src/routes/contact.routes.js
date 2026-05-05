@@ -5,11 +5,11 @@ import { ENV } from "../config/env.js";
 
 const router = express.Router();
 
-// FIXED: Proper Gmail SMTP configuration (production safe)
+// ✅ CORRECT Gmail SMTP configuration (STARTTLS on port 587)
 const transporter = nodemailer.createTransport({
   host: "smtp.gmail.com",
-  port: 465,
-  secure: true, // SSL
+  port: 587, // IMPORTANT: use 587 not 465
+  secure: false, // STARTTLS instead of SSL (false for port 587)
   auth: {
     user: process.env.EMAIL_USER,
     pass: process.env.EMAIL_PASS, // MUST be Gmail App Password
@@ -17,7 +17,9 @@ const transporter = nodemailer.createTransport({
   tls: {
     rejectUnauthorized: false,
   },
-  connectionTimeout: 10000, // FIX: avoid Render timeout crash
+  connectionTimeout: 10000,
+  greetingTimeout: 10000,
+  socketTimeout: 15000,
 });
 
 // Verify email configuration on startup
@@ -202,7 +204,7 @@ const sendAdminEmailNotification = async (contactData) => {
     return result;
   } catch (error) {
     console.error("❌ Failed to send admin email:", error.message);
-    return null; // FIX: prevent crash, return null instead of throwing
+    return null;
   }
 };
 
@@ -418,7 +420,7 @@ const sendAutoReplyEmail = async (contactData) => {
     return result;
   } catch (error) {
     console.error("❌ Failed to send auto-reply email:", error.message);
-    return null; // FIX: prevent crash, return null instead of throwing
+    return null;
   }
 };
 
@@ -473,19 +475,19 @@ router.post("/", async (req, res) => {
     await contact.save();
     console.log("✅ Contact saved to database with ID:", contact._id);
 
-    // FIX: Non-blocking email sending (prevents API timeout)
-    // This sends emails in the background without waiting for response
+    // Non-blocking email sending (prevents API timeout)
     setImmediate(async () => {
       console.log("📧 Sending admin email notification...");
       await sendAdminEmailNotification(contact);
-      
+
       console.log("📧 Sending auto-reply email to customer...");
       await sendAutoReplyEmail(contact);
     });
 
     res.status(201).json({
       success: true,
-      message: "Thank you for reaching out! We will get back to you within 24 hours.",
+      message:
+        "Thank you for reaching out! We will get back to you within 24 hours.",
       id: contact._id,
     });
   } catch (error) {
