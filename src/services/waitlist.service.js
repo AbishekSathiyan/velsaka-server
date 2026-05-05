@@ -1,25 +1,49 @@
+// src/services/waitlist.service.js
+
 import Waitlist from "../models/waitlist.model.js";
 
-// create email
+/**
+ * ✅ Create or return existing email (atomic)
+ */
 export const createEmail = async (email) => {
-  const exists = await Waitlist.findOne({ email });
+  try {
+    if (!email) throw new Error("Email is required");
 
-  if (exists) return exists;
+    const normalizedEmail = email.toLowerCase().trim();
 
-  return await Waitlist.create({ email });
+    const user = await Waitlist.create({ email: normalizedEmail });
+
+    return {
+      user,
+      isNew: true,
+    };
+  } catch (err) {
+    // ✅ Handle duplicate
+    if (err.code === 11000) {
+      const existingUser = await Waitlist.findOne({
+        email: email.toLowerCase().trim(),
+      });
+
+      return {
+        user: existingUser,
+        isNew: false,
+      };
+    }
+
+    console.error("createEmail ERROR:", err.message);
+    throw err;
+  }
 };
 
-// delete single email
-export const deleteEmail = async (id) => {
-  return await Waitlist.findByIdAndDelete(id);
-};
-
-// ✅ ADD THIS (fix for your error)
-export const deleteAllEmails = async () => {
-  return await Waitlist.deleteMany({});
-};
-
-// get all emails
+/**
+ * ✅ Get all waitlist emails
+ */
 export const getAllEmails = async () => {
-  return await Waitlist.find().sort({ createdAt: -1 });
+  try {
+    const users = await Waitlist.find().sort({ createdAt: -1 });
+    return users;
+  } catch (err) {
+    console.error("getAllEmails ERROR:", err.message);
+    throw err;
+  }
 };

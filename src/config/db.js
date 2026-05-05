@@ -1,34 +1,55 @@
 // src/config/db.js
+
 import mongoose from "mongoose";
 
 const connectDB = async () => {
-  try {
-    const uri = process.env.MONGO_URI;
+  const uri = process.env.MONGO_URI;
 
-    if (!uri) {
-      throw new Error("MONGO_URI is missing in .env file");
-    }
-
-    console.log("🔄 Connecting to MongoDB...");
-    
-    // Remove the options object - they are not needed in Mongoose 7+
-    await mongoose.connect(uri);
-
-    console.log("✅ MongoDB Connected");
-    
-    // Handle connection events
-    mongoose.connection.on('error', (err) => {
-      console.error('❌ MongoDB connection error:', err);
-    });
-
-    mongoose.connection.on('disconnected', () => {
-      console.log('⚠️ MongoDB disconnected');
-    });
-
-  } catch (err) {
-    console.error("❌ DB ERROR:", err.message);
+  if (!uri) {
+    console.error("❌ MONGO_URI missing");
     process.exit(1);
   }
+
+  try {
+    console.log("🔄 Connecting to MongoDB...");
+
+    await mongoose.connect(uri, {
+      serverSelectionTimeoutMS: 5000,
+      socketTimeoutMS: 45000,
+      retryWrites: true,
+      w: "majority",
+    });
+
+    console.log("✅ MongoDB connected");
+  } catch (err) {
+    console.error("❌ DB ERROR:", err.message);
+
+    setTimeout(connectDB, 5000); // 🔁 retry instead of exit
+  }
 };
+
+/**
+ * ✅ Connection events
+ */
+mongoose.connection.on("connected", () => {
+  console.log("📡 Mongoose connected");
+});
+
+mongoose.connection.on("error", (err) => {
+  console.error("❌ Mongoose error:", err.message);
+});
+
+mongoose.connection.on("disconnected", () => {
+  console.log("⚠️ Mongoose disconnected... retrying");
+});
+
+/**
+ * ✅ Graceful shutdown
+ */
+process.on("SIGINT", async () => {
+  await mongoose.connection.close();
+  console.log("🛑 MongoDB closed");
+  process.exit(0);
+});
 
 export default connectDB;
