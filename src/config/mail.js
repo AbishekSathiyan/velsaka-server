@@ -1,30 +1,22 @@
-// backend/config/email.js
 import nodemailer from "nodemailer";
 import dns from "dns";
 
-// ✅ Force IPv4 (fixes Render issue)
+// ✅ Force IPv4 (Render fix)
 dns.setDefaultResultOrder("ipv4first");
 
-const PORT = parseInt(process.env.EMAIL_PORT) || 587;
-
-// ✅ Auto secure handling
-const isSecure = PORT === 465;
-
+// ========================
+// FORCE STABLE GMAIL CONFIG
+// ========================
 const transporter = nodemailer.createTransport({
-  host: process.env.EMAIL_HOST || "smtp.gmail.com",
-  port: PORT,
-  secure: isSecure, // ✅ correct mapping
-
-  requireTLS: !isSecure, // ✅ enforce TLS for 587
+  host: "smtp.gmail.com",
+  port: 465,          // ✅ BEST for cloud servers
+  secure: true,       // ✅ MUST be true for 465
 
   auth: {
     user: process.env.EMAIL_USER,
-    pass: process.env.EMAIL_PASS,
+    pass: process.env.EMAIL_PASS, // Gmail App Password
   },
 
-  family: 4, // ✅ force IPv4
-
   connectionTimeout: 30000,
-  greetingTimeout: 30000,
   socketTimeout: 30000,
 });
