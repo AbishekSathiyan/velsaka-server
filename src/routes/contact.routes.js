@@ -5,21 +5,25 @@ import { ENV } from "../config/env.js";
 
 const router = express.Router();
 
-// ✅ CORRECT Gmail SMTP configuration (STARTTLS on port 587)
+// ✅ FIXED: Force IPv4 to avoid ENETUNREACH error
 const transporter = nodemailer.createTransport({
   host: "smtp.gmail.com",
-  port: 587, // IMPORTANT: use 587 not 465
-  secure: false, // STARTTLS instead of SSL (false for port 587)
+  port: 587,
+  secure: false,
   auth: {
     user: process.env.EMAIL_USER,
-    pass: process.env.EMAIL_PASS, // MUST be Gmail App Password
+    pass: process.env.EMAIL_PASS,
   },
   tls: {
     rejectUnauthorized: false,
+    // Force TLS 1.2
+    minVersion: "TLSv1.2",
   },
-  connectionTimeout: 10000,
-  greetingTimeout: 10000,
-  socketTimeout: 15000,
+  // CRITICAL: Force IPv4
+  family: 4,
+  connectionTimeout: 30000,
+  greetingTimeout: 30000,
+  socketTimeout: 30000,
 });
 
 // Verify email configuration on startup
@@ -475,13 +479,16 @@ router.post("/", async (req, res) => {
     await contact.save();
     console.log("✅ Contact saved to database with ID:", contact._id);
 
-    // Non-blocking email sending (prevents API timeout)
+    // Non-blocking email sending
     setImmediate(async () => {
-      console.log("📧 Sending admin email notification...");
-      await sendAdminEmailNotification(contact);
-
-      console.log("📧 Sending auto-reply email to customer...");
-      await sendAutoReplyEmail(contact);
+      try {
+        console.log("📧 Sending admin email notification...");
+        await sendAdminEmailNotification(contact);
+        console.log("📧 Sending auto-reply email to customer...");
+        await sendAutoReplyEmail(contact);
+      } catch (emailError) {
+        console.error("❌ Email sending failed in background:", emailError.message);
+      }
     });
 
     res.status(201).json({
