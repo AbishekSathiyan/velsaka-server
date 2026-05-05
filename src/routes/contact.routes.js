@@ -17,15 +17,17 @@ const transporter = nodemailer.createTransport({
 // Verify email configuration on startup
 transporter.verify((error, success) => {
   if (error) {
-    console.error("Email configuration error:", error);
+    console.error("❌ Email configuration error:", error);
   } else {
-    console.log("Email server is ready to send messages");
+    console.log("✅ Email server is ready to send messages");
   }
 });
 
 // Professional email template for admin notification
 const sendAdminEmailNotification = async (contactData) => {
-  const { fullName, email, phone, service, message, createdAt } = contactData;
+  // FIXED: Safely handle createdAt
+  const { fullName, email, phone, service, message } = contactData;
+  const createdAt = contactData.createdAt || new Date();
 
   const emailTemplate = `
 <!DOCTYPE html>
@@ -143,7 +145,7 @@ const sendAdminEmailNotification = async (contactData) => {
 
       <!-- CTA -->
       <div style="text-align:center;">
-        <a href="${process.env.ADMIN_PANEL_URL || "http://localhost:3000/admin/contacts"}"
+        <a href="${process.env.ADMIN_PANEL_URL || "http://localhost:5173/admin/contacts"}"
            style="display:inline-block; background:linear-gradient(135deg,#667eea 0%,#764ba2 100%); color:#ffffff; padding:12px 28px; border-radius:25px; text-decoration:none; font-weight:700; font-size:14px; box-shadow:0 4px 12px rgba(102,126,234,0.3); transition:transform 0.2s;">
           VIEW FULL DETAILS →
         </a>
@@ -171,30 +173,39 @@ const sendAdminEmailNotification = async (contactData) => {
 </html>
   `;
 
-  return await transporter.sendMail({
-    from: `"VELSAKA TECH" <${process.env.EMAIL_USER}>`,
-    to: "abishek.sathiyan.2002@gmail.com",
-    subject: `New Lead: ${service} inquiry from ${fullName}`,
-    html: emailTemplate,
-    text: `
-      NEW CONTACT FORM SUBMISSION
-      
-      Name: ${fullName}
-      Email: ${email}
-      Phone: ${phone || "Not provided"}
-      Service: ${service}
-      Message: ${message}
-      
-      Submitted: ${new Date(createdAt).toLocaleString()}
-      
-      View in Admin Panel: ${process.env.ADMIN_PANEL_URL || "http://localhost:3000/admin/contacts"}
-    `,
-  });
+  try {
+    const result = await transporter.sendMail({
+      from: `"VELSAKA TECH" <${process.env.EMAIL_USER}>`,
+      to: "abishek.sathiyan.2002@gmail.com",
+      subject: `New Lead: ${service} inquiry from ${fullName}`,
+      html: emailTemplate,
+      text: `
+        NEW CONTACT FORM SUBMISSION
+        
+        Name: ${fullName}
+        Email: ${email}
+        Phone: ${phone || "Not provided"}
+        Service: ${service}
+        Message: ${message}
+        
+        Submitted: ${new Date(createdAt).toLocaleString()}
+        
+        View in Admin Panel: ${process.env.ADMIN_PANEL_URL || "http://localhost:5173/admin/contacts"}
+      `,
+    });
+    console.log("✅ Admin email sent:", result.response);
+    return result;
+  } catch (error) {
+    console.error("❌ Failed to send admin email:", error.message);
+    throw error;
+  }
 };
 
 // Professional auto-reply email template for customer
 const sendAutoReplyEmail = async (contactData) => {
-  const { fullName, email, service, message, _id } = contactData;
+  // FIXED: Safely handle createdAt
+  const { fullName, email, service, message } = contactData;
+  const _id = contactData._id || contactData.id;
 
   const autoReplyTemplate = `
 <!DOCTYPE html>
@@ -361,48 +372,55 @@ const sendAutoReplyEmail = async (contactData) => {
 </html>
   `;
 
-  return await transporter.sendMail({
-    from: `"VELSAKA TECH Team" <${process.env.EMAIL_USER}>`,
-    to: email,
-    subject: `Thank you for contacting VELSAKA TECH - We'll be in touch within 24 hours`,
-    html: autoReplyTemplate,
-    text: `
-      THANK YOU FOR CONTACTING VELSAKA TECH
-      
-      Dear ${fullName},
-      
-      We've received your inquiry regarding ${service} services.
-      
-      WHAT HAPPENS NEXT:
-      1. Quick Confirmation - Within 24 hours
-      2. Detailed Consultation - Schedule a call
-      3. Custom Proposal - Within 3-5 days
-      4. Project Kickoff - Start building
-      
-      MEET THE FOUNDER:
-      Abishek Sathiyan - Founder & Chief Architect
-      View his portfolio: https://abisheksathiyan-portfolio-front-end.vercel.app/
-      
-      For immediate assistance:
-      WhatsApp: +91 70920 85864
-      Call: +91 70920 85864
-      Email: abishek.sathiyan.2002@gmail.com
-      
-      Visit our website: ${ENV.CLIENT_URL || "http://localhost:5173"}
-      
-      Your Inquiry ID: ${_id}
-      
-      Best regards,
-      VELSAKA TECH Team
-      
-      Innovation Beyond Borders
-    `,
-  });
+  try {
+    const result = await transporter.sendMail({
+      from: `"VELSAKA TECH Team" <${process.env.EMAIL_USER}>`,
+      to: email,
+      subject: `Thank you for contacting VELSAKA TECH - We'll be in touch within 24 hours`,
+      html: autoReplyTemplate,
+      text: `
+        THANK YOU FOR CONTACTING VELSAKA TECH
+        
+        Dear ${fullName},
+        
+        We've received your inquiry regarding ${service} services.
+        
+        WHAT HAPPENS NEXT:
+        1. Quick Confirmation - Within 24 hours
+        2. Detailed Consultation - Schedule a call
+        3. Custom Proposal - Within 3-5 days
+        4. Project Kickoff - Start building
+        
+        MEET THE FOUNDER:
+        Abishek Sathiyan - Founder & Chief Architect
+        View his portfolio: https://abisheksathiyan-portfolio-front-end.vercel.app/
+        
+        For immediate assistance:
+        WhatsApp: +91 70920 85864
+        Call: +91 70920 85864
+        Email: abishek.sathiyan.2002@gmail.com
+        
+        Visit our website: ${ENV.PROD_CLIENT_URL || "http://localhost:5173"}
+        
+        Your Inquiry ID: ${_id}
+        
+        Best regards,
+        VELSAKA TECH Team
+        
+        Innovation Beyond Borders
+      `,
+    });
+    console.log("✅ Auto-reply email sent to:", email, result.response);
+    return result;
+  } catch (error) {
+    console.error("❌ Failed to send auto-reply email:", error.message);
+    throw error;
+  }
 };
 
 // POST / - Submit contact form
 router.post("/", async (req, res) => {
-  console.log("POST request received at /api/contact");
+  console.log("📝 POST request received at /api/contact");
   console.log("Request body:", req.body);
 
   try {
@@ -449,15 +467,23 @@ router.post("/", async (req, res) => {
     });
 
     await contact.save();
-    console.log("Contact saved to database with ID:", contact._id);
+    console.log("✅ Contact saved to database with ID:", contact._id);
 
-    // Send email notifications
-    Promise.all([
-      sendAdminEmailNotification(contact),
-      sendAutoReplyEmail(contact),
-    ]).catch((emailError) => {
-      console.error("Email notification failed:", emailError);
-    });
+    // Send email notifications - FIXED: Now awaiting properly
+    try {
+      console.log("📧 Sending admin email notification...");
+      await sendAdminEmailNotification(contact);
+      console.log("✅ Admin email sent successfully");
+
+      console.log("📧 Sending auto-reply email to customer...");
+      await sendAutoReplyEmail(contact);
+      console.log("✅ Auto-reply email sent successfully");
+    } catch (emailError) {
+      console.error("❌ Email sending failed:", emailError.message);
+      console.error("Email error details:", emailError);
+      // Don't fail the request if email fails - just log it
+      // The contact is already saved in database
+    }
 
     res.status(201).json({
       success: true,
@@ -466,7 +492,7 @@ router.post("/", async (req, res) => {
       id: contact._id,
     });
   } catch (error) {
-    console.error("Contact form error:", error);
+    console.error("❌ Contact form error:", error);
     res.status(500).json({
       success: false,
       message: "Internal server error. Please try again later.",
@@ -476,7 +502,7 @@ router.post("/", async (req, res) => {
 
 // GET / - Get all contacts (Admin only)
 router.get("/", async (req, res) => {
-  console.log("GET request received at /api/contact");
+  console.log("📋 GET request received at /api/contact");
 
   try {
     const contacts = await Contact.find().sort({ createdAt: -1 });
